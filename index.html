@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPI QR Code Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .container {
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        label, input, button {
+            margin-bottom: 10px;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+        }
+        .theme-toggle:hover {
+            background-color: #0056b3;
+        }
+        .dark-mode {
+            background-color: #333;
+            color: #f1f1f1;
+        }
+        .dark-mode button, .dark-mode .theme-toggle {
+            background-color: #444;
+            color: white;
+        }
+        .dark-mode button:hover, .dark-mode .theme-toggle:hover {
+            background-color: #222;
+        }
+        .icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle"><i id="theme-icon" class="fas fa-moon icon"></i></button>
+    <div class="container">
+        <h1>UPI QR Code Generator</h1>
+        <form id="upi-form">
+            <label for="upi_id">Enter UPI ID:</label>
+            <input type="text" id="upi_id" name="upi_id" required>
+            <button type="submit">Generate QR Code</button>
+            <p id="error-message" class="error"></p>
+        </form>
+        <br>
+        <div id="qr-code">
+            <!-- QR Code will be displayed here -->
+        </div>
+    </div>
+    <script>
+        document.getElementById('upi-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const upiID = document.getElementById('upi_id').value;
+            const errorMessage = document.getElementById('error-message');
+
+            // Client-side validation for UPI ID format
+            const validUPIPattern = /^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+$/;
+            if (!validUPIPattern.test(upiID)) {
+                errorMessage.textContent = 'Invalid UPI ID format. Please use the format username@bankname.';
+                return;
+            } else {
+                errorMessage.textContent = '';
+            }
+
+            fetch(`/generate_qr?upi_id=${encodeURIComponent(upiID)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const img = document.createElement('img');
+                    img.src = url;
+                    const qrCodeDiv = document.getElementById('qr-code');
+                    qrCodeDiv.innerHTML = '';
+                    qrCodeDiv.appendChild(img);
+                })
+                .catch(error => {
+                    errorMessage.textContent = error.message;
+                });
+        });
+
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            const themeIcon = document.getElementById('theme-icon');
+            if (document.body.classList.contains('dark-mode')) {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+        });
+    </script>
+</body>
+</html>
